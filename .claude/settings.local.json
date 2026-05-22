@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem *)",
+      "Bash(flutter --version)",
+      "Read(//c/flutter/bin/**)",
+      "Read(//c/Users/Admin/flutter/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/Admin/**)",
+      "PowerShell(Get-Command *)",
+      "Bash(flutter analyze *)"
+    ]
+  }
+}

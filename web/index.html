@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="AIS Package Store — LaunchDarkly Feature Flags Demo">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="AIS Store">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>AIS Package Store | LaunchDarkly Demo</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    body {
+      margin: 0;
+      background-color: #002820;
+      font-family: 'Noto Sans Thai', sans-serif;
+    }
+
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, #002820 0%, #003B2E 50%, #1E5128 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+    }
+
+    #loading-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .ais-logo-svg {
+      width: 48px;
+      height: 48px;
+      margin-right: 12px;
+    }
+
+    .ais-text {
+      color: white;
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 6px;
+    }
+
+    .loading-subtitle {
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .ld-badge {
+      background: rgba(64, 91, 255, 0.2);
+      border: 1px solid rgba(64, 91, 255, 0.5);
+      color: #7B8FFF;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 32px;
+      font-weight: bold;
+    }
+
+    .loading-bar-container {
+      width: 200px;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loading-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #AECC40, #8DC63F);
+      border-radius: 2px;
+      animation: loading 1.8s ease-in-out infinite;
+    }
+
+    @keyframes loading {
+      0% { width: 0%; }
+      50% { width: 80%; }
+      100% { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="logo-container">
+      <svg class="ais-logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 32 L22 8 L30 18 L16 34Z" fill="#AECC40"/>
+        <path d="M18 32 L32 8 L40 18 L26 36Z" fill="#8DC63F" opacity="0.8"/>
+      </svg>
+      <span class="ais-text">AIS</span>
+    </div>
+    <div class="ld-badge">⚡ Powered by LaunchDarkly Feature Flags</div>
+    <div class="loading-subtitle">กำลังโหลด AIS Package Store...</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      const screen = document.getElementById('loading-screen');
+      if (screen) {
+        screen.classList.add('fade-out');
+        setTimeout(() => screen.remove(), 600);
+      }
+    });
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
