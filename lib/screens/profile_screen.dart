@@ -813,8 +813,8 @@ class _LDConnectionCardState extends State<_LDConnectionCard> {
               controller: widget.sdkKeyCtrl,
               obscureText: !_showKey,
               decoration: InputDecoration(
-                labelText: 'LaunchDarkly Mobile SDK Key',
-                hintText: 'mob-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+                labelText: 'LaunchDarkly Client-side ID (Web)',
+                hintText: '6a0fe89372d0390ef8034f7c',
                 prefixIcon: const Icon(Icons.vpn_key, size: 20),
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -823,7 +823,7 @@ class _LDConnectionCardState extends State<_LDConnectionCard> {
                   onPressed: () => setState(() => _showKey = !_showKey),
                 ),
                 helperText:
-                    'หาได้ที่ app.launchdarkly.com → Account → Projects → Client-side ID',
+                    'LD Dashboard → Account settings → Environments → Client-side ID',
                 helperStyle: const TextStyle(
                     fontSize: 10, color: AISColors.textMedium),
               ),

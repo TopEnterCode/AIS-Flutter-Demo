@@ -108,10 +108,11 @@ class LDFlagInfo {
 }
 
 // ============================================================
-//  LDService — wraps LaunchDarkly Flutter SDK v3.x (static API)
-//    • SDK v3.x uses all-static methods on LDClient
-//    • Flag values are cached in _flags and kept in sync
-//    • Falls back to mock/demo mode when SDK is unavailable
+//  LDService — wraps LaunchDarkly Flutter SDK v4.x
+//    • LDClient is instance-based in v4.x
+//    • Variations are synchronous (no await needed)
+//    • flagChanges emits FlagsChangedEvent via Stream
+//    • Web uses Client-side ID; Mobile uses Mobile key
 // ============================================================
 class LDService extends ChangeNotifier {
   LDService._({required LDUserContext initialContext}) {
@@ -119,11 +120,11 @@ class LDService extends ChangeNotifier {
     _initDefaultFlags();
   }
 
-  // ── SDK state ────────────────────────────────────────────
-  bool _isConnected = false;
-  LDFlagsReceivedCallback? _ldFlagsCallback;
+  // ── Real LD client (null in mock/demo mode) ──────────────
+  LDClient? _client;
+  StreamSubscription<FlagsChangedEvent>? _flagSub;
 
-  // ── App state ────────────────────────────────────────────
+  // ── State ────────────────────────────────────────────────
   LDConnectionStatus _status = LDConnectionStatus.disconnected;
   String? _sdkKey;
   late LDUserContext _userContext;
@@ -131,7 +132,7 @@ class LDService extends ChangeNotifier {
 
   LDConnectionStatus get status => _status;
   bool get isConnected => _status == LDConnectionStatus.connected;
-  bool get isMockMode => !_isConnected;
+  bool get isMockMode => _client == null;
   LDUserContext get userContext => _userContext;
   String? get sdkKey => _sdkKey;
   List<LDFlagInfo> get allFlags => _flags.values.toList();
@@ -164,21 +165,25 @@ class LDService extends ChangeNotifier {
     _status = LDConnectionStatus.connecting;
     notifyListeners();
     try {
-      final config =
-          LDConfigBuilder(sdkKey, AutoEnvAttributes.Enabled).build();
+      // v4.x: LDConfig(credential, AutoEnvAttributes.enabled)
+      // Web build → credential = Client-side ID
+      // Mobile build → credential = Mobile key
+      final config = LDConfig(sdkKey, AutoEnvAttributes.enabled);
       final ldCtx = _toLDContext(ctx);
-      await LDClient.start(config, ldCtx);
-      await LDClient.startFuture(timeLimit: const Duration(seconds: 5));
-
-      _ldFlagsCallback = (List<String> _) {
-        _syncFlagsFromLD().then((_) => notifyListeners());
-      };
-      await LDClient.registerFlagsReceivedListener(_ldFlagsCallback!);
-      await _syncFlagsFromLD();
-      _isConnected = true;
+      _client = LDClient(config, ldCtx);
+      await _client!.start().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => false,
+          );
+      _flagSub = _client!.flagChanges.listen((_) {
+        _syncFlagsFromLD();
+        notifyListeners();
+      });
+      _syncFlagsFromLD();
       _status = LDConnectionStatus.connected;
     } catch (e) {
       debugPrint('[LDService] connection error: $e');
+      _client = null;
       _status = LDConnectionStatus.error;
     }
     notifyListeners();
@@ -191,26 +196,18 @@ class LDService extends ChangeNotifier {
   }) async {
     if (sdkKey.isEmpty) return;
     final ctx = context ?? _userContext;
-    if (_isConnected) {
-      if (_ldFlagsCallback != null) {
-        await LDClient.unregisterFlagsReceivedListener(_ldFlagsCallback!);
-        _ldFlagsCallback = null;
-      }
-      await LDClient.close();
-      _isConnected = false;
+    if (_client != null) {
+      await _client!.close();
+      await _flagSub?.cancel();
+      _client = null;
     }
     await _connectReal(sdkKey, ctx);
   }
 
   void disconnect() {
-    if (_ldFlagsCallback != null) {
-      LDClient.unregisterFlagsReceivedListener(_ldFlagsCallback!);
-      _ldFlagsCallback = null;
-    }
-    if (_isConnected) {
-      LDClient.close();
-      _isConnected = false;
-    }
+    _flagSub?.cancel();
+    _client?.close();
+    _client = null;
     _sdkKey = null;
     _status = LDConnectionStatus.disconnected;
     notifyListeners();
@@ -219,27 +216,30 @@ class LDService extends ChangeNotifier {
   // ── Identify / switch user context ──────────────────────
   Future<void> identifyUser(LDUserContext context) async {
     _userContext = context;
-    if (_isConnected) {
-      await LDClient.identify(_toLDContext(context));
-      await _syncFlagsFromLD();
+    if (_client != null) {
+      await _client!.identify(_toLDContext(context));
+      _syncFlagsFromLD();
     } else {
       _applyMockTargeting(context);
     }
     notifyListeners();
   }
 
-  // ── Flag readers (always read from cache) ────────────────
+  // ── Flag readers ─────────────────────────────────────────
   bool getBool(String key, {bool defaultValue = false}) {
+    if (_client != null) return _client!.boolVariation(key, defaultValue);
     final flag = _flags[key];
     return flag?.value as bool? ?? defaultValue;
   }
 
   String getString(String key, {String defaultValue = ''}) {
+    if (_client != null) return _client!.stringVariation(key, defaultValue);
     final flag = _flags[key];
     return flag?.value as String? ?? defaultValue;
   }
 
   double getNumber(String key, {double defaultValue = 0.0}) {
+    if (_client != null) return _client!.doubleVariation(key, defaultValue);
     final flag = _flags[key];
     final v = flag?.value;
     if (v is double) return v;
@@ -249,6 +249,11 @@ class LDService extends ChangeNotifier {
 
   Map<String, dynamic> getJson(String key,
       {Map<String, dynamic> defaultValue = const {}}) {
+    if (_client != null) {
+      final ldVal = _client!.jsonVariation(key, LDValue.ofNull());
+      final parsed = _ldValueToDart(ldVal);
+      return (parsed is Map<String, dynamic>) ? parsed : defaultValue;
+    }
     final flag = _flags[key];
     final v = flag?.value;
     if (v is Map<String, dynamic>) return v;
@@ -267,9 +272,7 @@ class LDService extends ChangeNotifier {
   void track(String eventName,
       {double? metricValue, Map<String, dynamic>? data}) {
     debugPrint('[LD Track] $eventName value=$metricValue');
-    if (_isConnected) {
-      LDClient.track(eventName, metricValue: metricValue);
-    }
+    _client?.track(eventName, metricValue: metricValue);
   }
 
   // ── Internals ────────────────────────────────────────────
@@ -280,18 +283,18 @@ class LDService extends ChangeNotifier {
 
     final user = builder.kind('user', ctx.key);
     if (ctx.name != null) user.name(ctx.name!);
-    if (ctx.email != null) user.set('email', LDValue.ofString(ctx.email!));
-    if (ctx.role != null) user.set('role', LDValue.ofString(ctx.role!));
-    user.set('plan', LDValue.ofString(ctx.plan));
-    user.set('country', LDValue.ofString(ctx.country));
-    user.set('betaTester', LDValue.ofBool(ctx.betaTester));
+    if (ctx.email != null) user.setString('email', ctx.email!);
+    if (ctx.role != null) user.setString('role', ctx.role!);
+    user.setString('plan', ctx.plan);
+    user.setString('country', ctx.country);
+    user.setBool('betaTester', ctx.betaTester);
     for (final e in ctx.attributes.entries) {
       if (e.value is bool) {
-        user.set(e.key, LDValue.ofBool(e.value as bool));
+        user.setBool(e.key, e.value as bool);
       } else if (e.value is num) {
-        user.set(e.key, LDValue.ofNum(e.value as num));
+        user.setNum(e.key, e.value as num);
       } else {
-        user.set(e.key, LDValue.ofString(e.value.toString()));
+        user.setString(e.key, e.value.toString());
       }
     }
 
@@ -300,7 +303,7 @@ class LDService extends ChangeNotifier {
       final org = builder.kind('organization', ctx.organizationKey!);
       if (ctx.organizationName != null) org.name(ctx.organizationName!);
       if (ctx.organizationPlan != null) {
-        org.set('plan', LDValue.ofString(ctx.organizationPlan!));
+        org.setString('plan', ctx.organizationPlan!);
       }
     }
 
@@ -308,28 +311,25 @@ class LDService extends ChangeNotifier {
   }
 
   // Pulls all flag values from real LDClient into _flags cache
-  Future<void> _syncFlagsFromLD() async {
-    if (!_isConnected) return;
+  void _syncFlagsFromLD() {
+    if (_client == null) return;
     for (final flag in _flags.values) {
       switch (flag.type) {
         case LDFlagType.boolean:
           _flags[flag.key] = flag.copyWithValue(
-            await LDClient.boolVariation(
-                flag.key, flag.defaultValue as bool),
+            _client!.boolVariation(flag.key, flag.defaultValue as bool),
           );
         case LDFlagType.string:
           _flags[flag.key] = flag.copyWithValue(
-            await LDClient.stringVariation(
-                flag.key, flag.defaultValue as String),
+            _client!.stringVariation(flag.key, flag.defaultValue as String),
           );
         case LDFlagType.number:
           _flags[flag.key] = flag.copyWithValue(
-            await LDClient.doubleVariation(
+            _client!.doubleVariation(
                 flag.key, (flag.defaultValue as num).toDouble()),
           );
         case LDFlagType.json:
-          final raw =
-              await LDClient.jsonVariation(flag.key, LDValue.ofNull());
+          final raw = _client!.jsonVariation(flag.key, LDValue.ofNull());
           final parsed = _ldValueToDart(raw);
           _flags[flag.key] = flag.copyWithValue(
             (parsed is Map<String, dynamic>) ? parsed : flag.defaultValue,
@@ -350,18 +350,15 @@ class LDService extends ChangeNotifier {
     setMockFlag(FlagKeys.showVipBenefits, isAISStaff || isVIP);
     setMockFlag(FlagKeys.showCorporatePackages, isCorporate || isAISStaff);
 
-    // AIS staff get all features
     if (isAISStaff) {
       setMockFlag(FlagKeys.enableAiAssistant, true);
       setMockFlag(FlagKeys.discountPercentage, 30.0);
     }
 
-    // Country-based hero banner
     if (ctx.country != 'TH') {
       setMockFlag(FlagKeys.heroBannerVariant, 'variant_b');
     }
 
-    // Beta tester gets new features
     if (ctx.betaTester) {
       setMockFlag(FlagKeys.newCheckoutFlow, true);
       setMockFlag(FlagKeys.newPackageCard, true);
@@ -370,24 +367,24 @@ class LDService extends ChangeNotifier {
 
   // Converts LDValue → Dart native types for JSON flags
   dynamic _ldValueToDart(LDValue value) {
-    switch (value.getType()) {
-      case LDValueType.OBJECT:
+    switch (value.type) {
+      case LDValueType.object:
         final map = <String, dynamic>{};
-        for (final key in value.keys()) {
+        for (final key in value.keys) {
           map[key] = _ldValueToDart(value.getFor(key));
         }
         return map;
-      case LDValueType.ARRAY:
+      case LDValueType.array:
         final list = <dynamic>[];
-        for (int i = 0; i < value.size(); i++) {
+        for (int i = 0; i < value.length; i++) {
           list.add(_ldValueToDart(value.get(i)));
         }
         return list;
-      case LDValueType.STRING:
+      case LDValueType.string:
         return value.stringValue();
-      case LDValueType.NUMBER:
+      case LDValueType.number:
         return value.doubleValue();
-      case LDValueType.BOOLEAN:
+      case LDValueType.boolean:
         return value.booleanValue();
       default:
         return null;
@@ -673,12 +670,8 @@ class LDService extends ChangeNotifier {
 
   @override
   void dispose() {
-    if (_ldFlagsCallback != null) {
-      LDClient.unregisterFlagsReceivedListener(_ldFlagsCallback!);
-    }
-    if (_isConnected) {
-      LDClient.close();
-    }
+    _flagSub?.cancel();
+    _client?.close();
     super.dispose();
   }
 }

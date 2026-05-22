@@ -8,7 +8,9 @@
       "Read(//c/Program Files/**)",
       "Read(//c/Users/Admin/**)",
       "PowerShell(Get-Command *)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(not exist *)",
+      "Bash(flutter pub *)"
     ]
   }
 }
