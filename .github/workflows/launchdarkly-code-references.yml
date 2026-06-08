@@ -1,0 +1,20 @@
+name: LaunchDarkly Code References
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  launchdarkly-code-refs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: LaunchDarkly Code References Action
+        uses: launchdarkly/github-actions/code-references@v1
+        with:
+          accessToken: ${{ secrets.LAUNCHDARKLY_ACCESS_TOKEN }}

@@ -1,3 +1,9 @@
-2026/05/22-15:37:06.926 66d0 Reusing MANIFEST C:\Users\Admin\AppData\Local\Temp\flutter_tools.ecbc47c1\flutter_tools_chrome_device.dfe720cf\Default\Local Storage\leveldb/MANIFEST-000001
-2026/05/22-15:37:06.937 66d0 Recovering log #3
-2026/05/22-15:37:06.941 66d0 Reusing old log C:\Users\Admin\AppData\Local\Temp\flutter_tools.ecbc47c1\flutter_tools_chrome_device.dfe720cf\Default\Local Storage\leveldb/000003.log 
+2026/05/22-15:51:40.158 704 Reusing MANIFEST C:\Users\Admin\AppData\Local\Temp\flutter_tools.db053329\flutter_tools_chrome_device.a0f24740\Default\Local Storage\leveldb/MANIFEST-000001
+2026/05/22-15:51:40.171 704 Recovering log #3
+2026/05/22-15:51:40.190 704 Reusing old log C:\Users\Admin\AppData\Local\Temp\flutter_tools.db053329\flutter_tools_chrome_device.a0f24740\Default\Local Storage\leveldb/000003.log 
+2026/05/22-16:21:09.789 70e4 Level-0 table #5: started
+2026/05/22-16:21:09.793 70e4 Level-0 table #5: 16128 bytes OK
+2026/05/22-16:21:09.796 70e4 Delete type=0 #3
+2026/05/22-17:08:33.577 70e4 Level-0 table #7: started
+2026/05/22-17:08:33.581 70e4 Level-0 table #7: 15088 bytes OK
+2026/05/22-17:08:33.584 70e4 Delete type=0 #4
