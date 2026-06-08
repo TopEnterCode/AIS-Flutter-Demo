@@ -10,10 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }} # <-- เพิ่มบรรทัดนี้เข้าไปเพื่อให้บอทมีสิทธิ์อ่านไฟล์ในคลัง
+        uses: actions/checkout@v3 # ดึงโค้ดเวอร์ชันล่าสุดแบบปกติ ไม่เปิดดูประวัติย้อนหลังลึกๆ
 
       - name: LaunchDarkly Code References Action
         uses: launchdarkly/github-actions/code-references@v1
