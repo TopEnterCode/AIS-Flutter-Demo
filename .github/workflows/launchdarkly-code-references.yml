@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }} # <-- เพิ่มบรรทัดนี้เข้าไปเพื่อให้บอทมีสิทธิ์อ่านไฟล์ในคลัง
 
       - name: LaunchDarkly Code References Action
         uses: launchdarkly/github-actions/code-references@v1
