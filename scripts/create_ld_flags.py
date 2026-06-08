@@ -21,13 +21,14 @@
 import json
 import urllib.request
 import urllib.error
+import os
 import sys
 import time
 
 # ============================================================
 #  CONFIG — แก้ 2 ค่านี้ก่อน run
 # ============================================================
-API_TOKEN   = "api-1eabbfce-098f-4cae-aa1c-d166afa13821"
+API_TOKEN = os.getenv("LD_ACCESS_TOKEN") or os.getenv("LAUNCHDARKLY_ACCESS_TOKEN", "")
 PROJECT_KEY = "AIS-Flutter"   # หรือ key ของ project ที่สร้าง
 
 CLIENT_SIDE_ID = "6a0fe89372d0390ef8034f7c"   # จากรูป (ใช้ใน Flutter app)
@@ -415,9 +416,9 @@ def main():
     print("=" * 60)
 
     # Validate config
-    if API_TOKEN.startswith("api-xxxx"):
-        print("\n❌  ERROR: ยังไม่ได้ใส่ API_TOKEN!")
-        print("   แก้ค่า API_TOKEN ในไฟล์นี้ก่อน run")
+    if not API_TOKEN or API_TOKEN.startswith("api-xxxx"):
+        print("\nERROR: missing LaunchDarkly API token")
+        print("Set LD_ACCESS_TOKEN or LAUNCHDARKLY_ACCESS_TOKEN before running this script.")
         print("   วิธีหา: LaunchDarkly > Account settings > Authorization > Access tokens")
         sys.exit(1)
 

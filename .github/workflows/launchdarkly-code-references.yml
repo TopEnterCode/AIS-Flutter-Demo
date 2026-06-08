@@ -5,16 +5,23 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   launchdarkly-code-refs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 11
 
       - name: LaunchDarkly Code References Action
-        uses: launchdarkly/github-actions/code-references@v1
+        uses: launchdarkly/find-code-references@v2.14.0
         with:
-          accessToken: ${{ secrets.LAUNCHDARKLY_ACCESS_TOKEN }}
+          accessToken: ${{ secrets.LD_ACCESS_TOKEN || secrets.LAUNCHDARKLY_ACCESS_TOKEN }}
+          projKey: ${{ vars.LD_PROJECT_KEY || 'AIS-Flutter' }}
