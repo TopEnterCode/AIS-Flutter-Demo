@@ -24,6 +24,33 @@ import urllib.error
 import os
 import sys
 import time
+from pathlib import Path
+
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+
+def load_dotenv():
+    """Load simple KEY=VALUE entries without overwriting shell variables."""
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_dotenv()
 
 # ============================================================
 #  CONFIG — แก้ 2 ค่านี้ก่อน run
@@ -159,7 +186,46 @@ FLAGS = [
         "env_on": False,
     },
 
-    # ─── 2. MULTIVARIATE STRING FLAGS ───────────────────────
+    # ─── 2. mPAY BACKEND ROLLOUT FLAGS ──────────────────────
+    {
+        "name": "mPAY Payment Flow V2",
+        "key": "payment-flow-v2",
+        "kind": "boolean",
+        "description": "Selects the mPAY payment experience: stable V1 or the new V2 experience.",
+        "tags": ["boolean-flag", "mpay-demo", "rollout", "kill-switch", "ais-demo"],
+        "variations": [
+            {"value": True,  "name": "Payment V2"},
+            {"value": False, "name": "Payment V1"},
+        ],
+        "defaults": {"onVariation": 0, "offVariation": 1},
+        "env_on": False,
+    },
+    {
+        "name": "mPAY API V2",
+        "key": "mpay-api-v2",
+        "kind": "boolean",
+        "description": "Selects the mPAY API contract used by the payment integration.",
+        "tags": ["boolean-flag", "mpay-demo", "rollout", "kill-switch", "ais-demo"],
+        "variations": [
+            {"value": True,  "name": "API V2"},
+            {"value": False, "name": "API V1"},
+        ],
+        "defaults": {"onVariation": 0, "offVariation": 1},
+        "env_on": False,
+    },
+    {
+        "name": "mPAY Backend Connector V2",
+        "key": "mpay-connector-v2",
+        "kind": "boolean",
+        "description": "Selects the backend connector implementation used for the payment integration.",
+        "tags": ["boolean-flag", "mpay-demo", "rollout", "kill-switch", "ais-demo"],
+        "variations": [
+            {"value": True,  "name": "Connector V2"},
+            {"value": False, "name": "Connector V1"},
+        ],
+        "defaults": {"onVariation": 0, "offVariation": 1},
+        "env_on": False,
+    },
     {
         "name": "Hero Banner Variant",
         "key": "hero-banner-variant",

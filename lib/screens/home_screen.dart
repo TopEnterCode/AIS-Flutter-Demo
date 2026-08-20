@@ -37,9 +37,10 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: context.watch<LDService>().getBool(FlagKeys.enableAiAssistant)
-          ? const _AIAssistantFAB()
-          : null,
+      floatingActionButton:
+          context.watch<LDService>().getBool(FlagKeys.enableAiAssistant)
+              ? const _AIAssistantFAB()
+              : null,
     );
   }
 }
@@ -57,6 +58,7 @@ class _QuickActions extends StatelessWidget {
       (Icons.shopping_cart, 'ตะกร้า', '/cart'),
       (Icons.person, 'โปรไฟล์', '/profile'),
       (Icons.toggle_on, 'LD Demo', '/ld-demo'),
+      (Icons.payments_outlined, 'mPAY Demo', '/launchdarkly-mpay-demo'),
       (Icons.store, 'ทั้งหมด', '/packages'),
     ];
 
@@ -146,8 +148,7 @@ class _FeaturedPackages extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AISColors.ldBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
@@ -155,13 +156,11 @@ class _FeaturedPackages extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.auto_awesome,
-                        size: 12, color: AISColors.ldBlue),
+                    Icon(Icons.auto_awesome, size: 12, color: AISColors.ldBlue),
                     const SizedBox(width: 4),
                     Text(
                       'JSON Config: layout=$layout, count=$count',
-                      style: TextStyle(
-                          fontSize: 10, color: AISColors.ldBlue),
+                      style: TextStyle(fontSize: 10, color: AISColors.ldBlue),
                     ),
                   ],
                 ),
@@ -213,16 +212,26 @@ class _CategoryCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = [
-      (PackageCategory.postpaid, '📱', 'มือถือรายเดือน',
-          'แพ็กเกจ Postpaid 5G ไม่อั้น'),
-      (PackageCategory.prepaid, '💳', 'เติมเงิน',
-          'แพ็กเกจ Prepaid คุ้มค่า'),
-      (PackageCategory.fiber, '🌐', 'AIS Fibre',
-          'อินเทอร์เน็ตบ้านความเร็วสูง'),
-      (PackageCategory.bundle, '📦', 'บันเดิลพิเศษ',
-          'มือถือ + ไฟเบอร์ ราคาประหยัด'),
-      (PackageCategory.international, '✈️', 'โรมมิ่งต่างประเทศ',
-          'ใช้งานได้ใน 100+ ประเทศ'),
+      (
+        PackageCategory.postpaid,
+        '📱',
+        'มือถือรายเดือน',
+        'แพ็กเกจ Postpaid 5G ไม่อั้น'
+      ),
+      (PackageCategory.prepaid, '💳', 'เติมเงิน', 'แพ็กเกจ Prepaid คุ้มค่า'),
+      (PackageCategory.fiber, '🌐', 'AIS Fibre', 'อินเทอร์เน็ตบ้านความเร็วสูง'),
+      (
+        PackageCategory.bundle,
+        '📦',
+        'บันเดิลพิเศษ',
+        'มือถือ + ไฟเบอร์ ราคาประหยัด'
+      ),
+      (
+        PackageCategory.international,
+        '✈️',
+        'โรมมิ่งต่างประเทศ',
+        'ใช้งานได้ใน 100+ ประเทศ'
+      ),
     ];
 
     final isWide = MediaQuery.of(context).size.width > 700;
@@ -250,8 +259,7 @@ class _CategoryCards extends StatelessWidget {
             childAspectRatio: isWide ? 1.2 : 2.0,
             children: categories.map((cat) {
               return GestureDetector(
-                onTap: () => context.go(
-                    '/packages?category=${cat.$1.name}'),
+                onTap: () => context.go('/packages?category=${cat.$1.name}'),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -322,8 +330,7 @@ class _PromoSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('🎉 ',
-                  style: TextStyle(fontSize: 22)),
+              const Text('🎉 ', style: TextStyle(fontSize: 22)),
               const Text(
                 'โปรโมชั่นพิเศษ',
                 style: TextStyle(
@@ -337,7 +344,8 @@ class _PromoSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AISColors.ldYellow.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AISColors.ldYellow.withOpacity(0.5)),
+                  border:
+                      Border.all(color: AISColors.ldYellow.withOpacity(0.5)),
                 ),
                 child: const Text(
                   'Scheduled Changes',
@@ -497,7 +505,8 @@ class _StoreButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final String sub;
-  const _StoreButton({required this.icon, required this.label, required this.sub});
+  const _StoreButton(
+      {required this.icon, required this.label, required this.sub});
 
   @override
   Widget build(BuildContext context) {
@@ -552,7 +561,8 @@ class _Footer extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AISColors.ldBlue.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
@@ -599,7 +609,9 @@ class _AIAssistantFABState extends State<_AIAssistantFAB> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black26, blurRadius: 20, offset: const Offset(0, 4))
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: const Offset(0, 4))
               ],
             ),
             child: Column(
@@ -729,7 +741,8 @@ class _MaintenanceScreen extends StatelessWidget {
             const SizedBox(height: 12),
             const Text(
               'ขออภัยในความไม่สะดวก\nกรุณากลับมาใหม่ในภายหลัง',
-              style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.6),
+              style:
+                  TextStyle(color: Colors.white70, fontSize: 16, height: 1.6),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),

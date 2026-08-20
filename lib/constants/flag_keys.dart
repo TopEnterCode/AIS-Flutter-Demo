@@ -42,4 +42,9 @@ class FlagKeys {
 
   // 10. AI Config
   static const String aiModelConfig = 'ai-model-config';
+
+  // LaunchDarkly mPAY demo
+  static const String paymentFlowV2 = 'payment-flow-v2';
+  static const String mpayApiV2 = 'mpay-api-v2';
+  static const String mpayConnectorV2 = 'mpay-connector-v2';
 }

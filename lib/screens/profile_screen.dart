@@ -59,8 +59,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: const AISNavBar(),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-            horizontal: isWide ? 120 : 16, vertical: 24),
+        padding:
+            EdgeInsets.symmetric(horizontal: isWide ? 120 : 16, vertical: 24),
         child: isWide
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,8 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     emailCtrl: _emailCtrl,
                     selectedRole: _selectedRole,
                     roles: _roles,
-                    onRoleChanged: (v) =>
-                        setState(() => _selectedRole = v),
+                    onRoleChanged: (v) => setState(() => _selectedRole = v),
                     onSave: _saveProfile,
                     saved: _saved,
                   ),
@@ -158,8 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              '${persona.label} — LaunchDarkly Context อัปเดตแล้ว'),
+          content: Text('${persona.label} — LaunchDarkly Context อัปเดตแล้ว'),
           backgroundColor: AISColors.ldBlue,
           duration: const Duration(seconds: 3),
         ),
@@ -260,12 +258,11 @@ class _PersonaSwitcherCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: AISColors.textMedium),
             ),
             const SizedBox(height: 12),
-            ...LDContextFactory.personas
-                .map((p) => _PersonaItem(
-                      persona: p,
-                      isActive: p.id == activePersonaId,
-                      onTap: () => onPersonaSelected(p),
-                    )),
+            ...LDContextFactory.personas.map((p) => _PersonaItem(
+                  persona: p,
+                  isActive: p.id == activePersonaId,
+                  onTap: () => onPersonaSelected(p),
+                )),
           ],
         ),
       ),
@@ -298,9 +295,7 @@ class _PersonaItem extends StatelessWidget {
               : AISColors.background,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isActive
-                ? AISColors.ldPurple
-                : AISColors.divider,
+            color: isActive ? AISColors.ldPurple : AISColors.divider,
             width: isActive ? 1.5 : 1,
           ),
         ),
@@ -314,16 +309,14 @@ class _PersonaItem extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: isActive
-                        ? AISColors.ldPurple
-                        : AISColors.textDark,
+                    color: isActive ? AISColors.ldPurple : AISColors.textDark,
                   ),
                 ),
                 const Spacer(),
                 if (isActive)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: AISColors.ldPurple,
                       borderRadius: BorderRadius.circular(8),
@@ -342,14 +335,12 @@ class _PersonaItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               persona.description,
-              style: const TextStyle(
-                  fontSize: 11, color: AISColors.textMedium),
+              style: const TextStyle(fontSize: 11, color: AISColors.textMedium),
             ),
             const SizedBox(height: 4),
             // Targeting rule badge
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: AISColors.ldBlue.withOpacity(0.07),
                 borderRadius: BorderRadius.circular(6),
@@ -373,8 +364,8 @@ class _PersonaItem extends StatelessWidget {
                     (val is num && val > 0) ||
                     (val is String && val.isNotEmpty);
                 return Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: isPositive
                         ? AISColors.successGreen.withOpacity(0.1)
@@ -436,11 +427,11 @@ class _ProfileCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(user.name,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold)),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Text(user.email,
-                style: const TextStyle(
-                    color: AISColors.textMedium, fontSize: 14)),
+                style:
+                    const TextStyle(color: AISColors.textMedium, fontSize: 14)),
             const SizedBox(height: 8),
             _RoleChip(user.role),
             const SizedBox(height: 20),
@@ -452,8 +443,7 @@ class _ProfileCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AISColors.ldBlue.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: AISColors.ldBlue.withOpacity(0.2)),
+                border: Border.all(color: AISColors.ldBlue.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,16 +496,14 @@ class _ProfileCard extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: [
-                if (showVip)
-                  _FlagActive('👑 VIP Benefits', AISColors.gold),
-                if (showCorp)
-                  _FlagActive('🏢 Corporate', AISColors.ldPurple),
+                if (showVip) _FlagActive('👑 VIP Benefits', AISColors.gold),
+                if (showCorp) _FlagActive('🏢 Corporate', AISColors.ldPurple),
                 if (user.betaTester)
                   _FlagActive('🧪 Beta Tester', AISColors.ldTeal),
                 if (!showVip && !showCorp && !user.betaTester)
                   const Text('ยังไม่มี targeting พิเศษ',
-                      style: TextStyle(
-                          color: AISColors.textMedium, fontSize: 12)),
+                      style:
+                          TextStyle(color: AISColors.textMedium, fontSize: 12)),
               ],
             ),
           ],
@@ -677,8 +665,7 @@ class _EditForm extends StatelessWidget {
                 labelText: 'Email',
                 prefixIcon: const Icon(Icons.email, size: 20),
                 helperText: 'ลอง: user@ais.th → เปิด VIP Mode',
-                helperStyle:
-                    TextStyle(color: AISColors.ldBlue, fontSize: 10),
+                helperStyle: TextStyle(color: AISColors.ldBlue, fontSize: 10),
               ),
             ),
             const SizedBox(height: 12),
@@ -732,8 +719,8 @@ class _EditForm extends StatelessWidget {
                 icon: saved
                     ? const Icon(Icons.check, size: 18)
                     : const Icon(Icons.person_add, size: 18),
-                label: Text(
-                    saved ? 'บันทึกแล้ว!' : 'บันทึกและอัปเดต LD Context'),
+                label:
+                    Text(saved ? 'บันทึกแล้ว!' : 'บันทึกและอัปเดต LD Context'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       saved ? AISColors.successGreen : AISColors.limeGreen,
@@ -800,12 +787,11 @@ class _LDConnectionCardState extends State<_LDConnectionCard> {
             Text(
               isConnected
                   ? '✅ เชื่อมต่อกับ LaunchDarkly แล้ว (Real-time flags)'
-                  : '🔧 Demo Mode — ใส่ Mobile SDK Key เพื่อใช้งานจริง',
+                  : '🔧 Demo Mode — ใส่ Client-side ID เพื่อใช้งานจริง',
               style: TextStyle(
                 fontSize: 12,
-                color: isConnected
-                    ? AISColors.successGreen
-                    : AISColors.textMedium,
+                color:
+                    isConnected ? AISColors.successGreen : AISColors.textMedium,
               ),
             ),
             const SizedBox(height: 16),
@@ -817,15 +803,14 @@ class _LDConnectionCardState extends State<_LDConnectionCard> {
                 hintText: '6a0fe89372d0390ef8034f7c',
                 prefixIcon: const Icon(Icons.vpn_key, size: 20),
                 suffixIcon: IconButton(
-                  icon: Icon(
-                      _showKey ? Icons.visibility_off : Icons.visibility,
+                  icon: Icon(_showKey ? Icons.visibility_off : Icons.visibility,
                       size: 18),
                   onPressed: () => setState(() => _showKey = !_showKey),
                 ),
                 helperText:
                     'LD Dashboard → Account settings → Environments → Client-side ID',
-                helperStyle: const TextStyle(
-                    fontSize: 10, color: AISColors.textMedium),
+                helperStyle:
+                    const TextStyle(fontSize: 10, color: AISColors.textMedium),
               ),
             ),
             const SizedBox(height: 12),
@@ -890,15 +875,12 @@ class _StatusDot extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration:
-              BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(label,
             style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: FontWeight.bold)),
+                fontSize: 11, color: color, fontWeight: FontWeight.bold)),
       ],
     );
   }

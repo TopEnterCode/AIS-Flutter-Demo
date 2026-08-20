@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:launchdarkly_flutter_client_sdk/launchdarkly_flutter_client_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/flag_keys.dart';
 
 export 'package:launchdarkly_flutter_client_sdk/launchdarkly_flutter_client_sdk.dart'
@@ -153,8 +154,9 @@ class LDService extends ChangeNotifier {
           country: 'TH',
         );
     final service = LDService._(initialContext: ctx);
-    if (sdkKey != null && sdkKey.isNotEmpty) {
-      await service._connectReal(sdkKey, ctx);
+    final normalizedSdkKey = sdkKey?.trim();
+    if (normalizedSdkKey != null && normalizedSdkKey.isNotEmpty) {
+      await service._connectReal(normalizedSdkKey, ctx);
     }
     return service;
   }
@@ -171,18 +173,34 @@ class LDService extends ChangeNotifier {
       final config = LDConfig(sdkKey, AutoEnvAttributes.enabled);
       final ldCtx = _toLDContext(ctx);
       _client = LDClient(config, ldCtx);
-      await _client!.start().timeout(
-            const Duration(seconds: 5),
-            onTimeout: () => false,
-          );
+
+      // Listen before start so the initial flag payload (including cached
+      // values) cannot be missed.
       _flagSub = _client!.flagChanges.listen((_) {
         _syncFlagsFromLD();
         notifyListeners();
       });
+
+      var startTimedOut = false;
+      final started = await _client!.start().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          // The SDK may still finish initialization in the background;
+          // the flagChanges listener above will apply its values later.
+          startTimedOut = true;
+          return false;
+        },
+      );
+      if (!started && !startTimedOut) {
+        throw StateError('LaunchDarkly SDK failed to initialize');
+      }
       _syncFlagsFromLD();
       _status = LDConnectionStatus.connected;
     } catch (e) {
       debugPrint('[LDService] connection error: $e');
+      await _flagSub?.cancel();
+      await _client?.close();
+      _flagSub = null;
       _client = null;
       _status = LDConnectionStatus.error;
     }
@@ -194,14 +212,22 @@ class LDService extends ChangeNotifier {
     required String sdkKey,
     LDUserContext? context,
   }) async {
-    if (sdkKey.isEmpty) return;
+    final normalizedSdkKey = sdkKey.trim();
+    if (normalizedSdkKey.isEmpty) return;
     final ctx = context ?? _userContext;
     if (_client != null) {
       await _client!.close();
       await _flagSub?.cancel();
       _client = null;
     }
-    await _connectReal(sdkKey, ctx);
+    await _connectReal(normalizedSdkKey, ctx);
+
+    // Keep the connection across browser reloads. Only save a key after the
+    // client was created successfully; invalid credentials remain unsaved.
+    if (_client != null && _status == LDConnectionStatus.connected) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('ld_sdk_key', normalizedSdkKey);
+    }
   }
 
   void disconnect() {
@@ -210,6 +236,9 @@ class LDService extends ChangeNotifier {
     _client = null;
     _sdkKey = null;
     _status = LDConnectionStatus.disconnected;
+    unawaited(SharedPreferences.getInstance().then((prefs) {
+      return prefs.remove('ld_sdk_key');
+    }));
     notifyListeners();
   }
 
@@ -453,7 +482,8 @@ class LDService extends ChangeNotifier {
           'ใช้งานได้ทันที',
           'รับสิทธิ์ทันที'
         ],
-        demoHint: 'เปลี่ยนข้อความปุ่มเพื่อทดสอบว่า CTA ไหนให้ Conversion ดีกว่า',
+        demoHint:
+            'เปลี่ยนข้อความปุ่มเพื่อทดสอบว่า CTA ไหนให้ Conversion ดีกว่า',
         flagCategory: 'Multivariate (String)',
       ),
 
@@ -519,7 +549,8 @@ class LDService extends ChangeNotifier {
             'showPriceFirst': true,
           },
         ],
-        demoHint: 'เปลี่ยน JSON Config เพื่อปรับ Layout, จำนวนและลำดับแพ็กเกจแนะนำ',
+        demoHint:
+            'เปลี่ยน JSON Config เพื่อปรับ Layout, จำนวนและลำดับแพ็กเกจแนะนำ',
         flagCategory: 'Multivariate (JSON)',
       ),
       LDFlagInfo(
@@ -632,7 +663,8 @@ class LDService extends ChangeNotifier {
         value: 'green',
         defaultValue: 'green',
         possibleValues: ['green', 'orange', 'blue', 'red'],
-        demoHint: 'วัดผลคลิก Checkout ตามสีปุ่ม — เชื่อมกับ Metric ใน Experiments',
+        demoHint:
+            'วัดผลคลิก Checkout ตามสีปุ่ม — เชื่อมกับ Metric ใน Experiments',
         flagCategory: 'Experimentation (A/B)',
       ),
 
@@ -658,7 +690,8 @@ class LDService extends ChangeNotifier {
           'fallbackModel': 'claude-haiku-4-5',
         },
         possibleValues: [],
-        demoHint: 'เปลี่ยน Model หรือ System Prompt ของ AI โดยไม่ต้อง Deploy ใหม่',
+        demoHint:
+            'เปลี่ยน Model หรือ System Prompt ของ AI โดยไม่ต้อง Deploy ใหม่',
         flagCategory: 'AI Config',
       ),
     ];
