@@ -133,7 +133,7 @@ lib/features/launchdarkly_mpay_demo/
 ตั้ง rule ของทั้งสาม flag ให้เหมือนกันตามลำดับ:
 
 1. `userType` is `internal` → `true`
-2. `merchantId` is `MERCHANT-BETA` → `true`
+2. `merchantId` is `201` → `true`
 3. Percentage rollout ของ context ที่เหลือ → `true`
 4. Fallthrough → `false` (ปิดทั้งสาม V2 flags)
 
@@ -144,7 +144,7 @@ lib/features/launchdarkly_mpay_demo/
 | Identity | Key | `userType` | `merchantId` |
 |---|---|---|---|
 | Internal Tester | `employee-001` | `internal` | `MPAY-INTERNAL` |
-| Beta Merchant | `merchant-001` | `merchant` | `MERCHANT-BETA` |
+| Beta Merchant | `merchant-001` | `merchant` | `201` |
 | Normal Customer A | `customer-001` | `customer` | `MERCHANT-001` |
 | Normal Customer B | `customer-002` | `customer` | `MERCHANT-002` |
 

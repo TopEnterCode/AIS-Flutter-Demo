@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../constants/flag_keys.dart';
 import '../../../services/ld_service.dart';
 import '../domain/mpay_flow.dart';
+import '../domain/mpay_routing.dart';
 import '../models/mpay_demo_context.dart';
 
 class MpayPopulationResult {
@@ -33,6 +34,8 @@ class MpayDemoController extends ChangeNotifier {
   bool _apiV2 = false;
   bool _connectorV2 = false;
   bool _paymentFlowV2 = false;
+  String _routingMerchantKey = '201';
+  MpayRequestedApiVersion _requestedApiVersion = MpayRequestedApiVersion.v2;
   List<MpayPopulationResult> _populationResults = const [];
 
   MpayDemoController(this.ldService) {
@@ -52,6 +55,17 @@ class MpayDemoController extends ChangeNotifier {
   bool get connectorV2 => _connectorV2;
   bool get paymentFlowV2 => _paymentFlowV2;
   bool get v2Ready => _paymentFlowV2 && _apiV2 && _connectorV2;
+  String get routingMerchantKey => _routingMerchantKey;
+  MpayRequestedApiVersion get requestedApiVersion => _requestedApiVersion;
+  MpayRouteDecision get routeDecision => evaluateMpayRoute(
+        merchantKey: _routingMerchantKey,
+        requestedVersion: _requestedApiVersion,
+        apiV2Flag: _apiV2,
+        sdkAvailable: sdkAvailable,
+      );
+  MpayRequestPreview get requestPreview => MpayRequestPreview(
+        requestedVersion: _requestedApiVersion,
+      );
 
   MpayVersion get apiVersion => versionForFlag(_apiV2);
   MpayVersion get connectorVersion => versionForFlag(_connectorV2);
@@ -85,6 +99,18 @@ class MpayDemoController extends ChangeNotifier {
 
   void setSimulateV2Failure(bool value) {
     _simulateV2Failure = value;
+    notifyListeners();
+  }
+
+  void setRoutingMerchantKey(String value) {
+    if (_routingMerchantKey == value) return;
+    _routingMerchantKey = value;
+    notifyListeners();
+  }
+
+  void setRequestedApiVersion(MpayRequestedApiVersion value) {
+    if (_requestedApiVersion == value) return;
+    _requestedApiVersion = value;
     notifyListeners();
   }
 

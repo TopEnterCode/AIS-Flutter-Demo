@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/ais_theme.dart';
 import '../../../widgets/ais_navbar.dart';
 import '../domain/mpay_flow.dart';
+import '../domain/mpay_routing.dart';
 import '../models/mpay_demo_context.dart';
 import '../services/mpay_demo_controller.dart';
 
@@ -43,6 +44,10 @@ class _MpayDemoView extends StatelessWidget {
                 const _MpayHeader(),
                 const SizedBox(height: 20),
                 _ContextSelector(controller: controller),
+                const SizedBox(height: 16),
+                _ApiRoutingPlayground(controller: controller),
+                const SizedBox(height: 16),
+                _RoutingTestMatrix(controller: controller),
                 const SizedBox(height: 16),
                 _FlagSummary(controller: controller),
                 if (controller.emergencyFallbackActive) ...[
@@ -174,6 +179,353 @@ class _ContextSelector extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ApiRoutingPlayground extends StatelessWidget {
+  final MpayDemoController controller;
+
+  const _ApiRoutingPlayground({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final decision = controller.routeDecision;
+    final request = controller.requestPreview;
+    final decisionColor = decision.isV2
+        ? AISColors.ldBlue
+        : decision.usedSafeDefault
+            ? AISColors.warningOrange
+            : AISColors.successGreen;
+
+    return _SectionCard(
+      title: 'API Routing Playground',
+      icon: Icons.alt_route,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Production rule',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          _CodeBlock(
+            text:
+                'merchant key == "201" && apiVersion == "v2"  →  API v2\notherwise  →  API v1',
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              SizedBox(
+                width: 260,
+                child: TextFormField(
+                  initialValue: controller.routingMerchantKey,
+                  decoration: const InputDecoration(
+                    labelText: 'Merchant key',
+                    prefixIcon: Icon(Icons.storefront_outlined),
+                  ),
+                  onChanged: controller.setRoutingMerchantKey,
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<MpayRequestedApiVersion>(
+                  initialValue: controller.requestedApiVersion,
+                  decoration: const InputDecoration(
+                    labelText: 'Requested API version',
+                    prefixIcon: Icon(Icons.api_outlined),
+                  ),
+                  items: MpayRequestedApiVersion.values
+                      .map(
+                        (version) => DropdownMenuItem(
+                          value: version,
+                          child: Text(version.label),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.setRequestedApiVersion(value);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: decisionColor.withValues(alpha: 0.09),
+              border: Border.all(color: decisionColor.withValues(alpha: 0.35)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  decision.isV2 ? Icons.rocket_launch : Icons.shield_outlined,
+                  color: decisionColor,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Selected route: API ${decision.isV2 ? 'V2' : 'V1'}',
+                        style: TextStyle(
+                          color: decisionColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(decision.reason),
+                    ],
+                  ),
+                ),
+                _FlowBadge(
+                  label:
+                      decision.usedSafeDefault ? 'SAFE DEFAULT' : 'LIVE ROUTE',
+                  color: decisionColor,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Request contract preview',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          _CodeBlock(
+            text: _requestText(request, decision),
+          ),
+          const SizedBox(height: 10),
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.lock_outline, size: 17, color: AISColors.textMedium),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Credentials remain server-side. Never log API keys, JWTs, card/CVV data, or customer PII.',
+                  style: TextStyle(color: AISColors.textMedium, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AISColors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.repeat, size: 18, color: AISColors.warningOrange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Safe retry: reuse the same transaction and Idempotency-Key. On timeout, query status first; do not blindly retry V1 after V2 may have processed.',
+                    style: TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _requestText(MpayRequestPreview request, MpayRouteDecision decision) {
+  final headers = request.headers.entries
+      .map((entry) => '${entry.key}: ${entry.value}')
+      .join('\n');
+  final body = request.body.entries
+      .map((entry) =>
+          '  "${entry.key}": ${entry.value is num ? entry.value : '"${entry.value}"'}')
+      .join(',\n');
+  return 'POST ${request.endpoint}  →  API ${decision.isV2 ? 'V2' : 'V1'}\n'
+      '$headers\n\n'
+      '{\n$body\n}';
+}
+
+class _RoutingTestMatrix extends StatelessWidget {
+  final MpayDemoController controller;
+
+  const _RoutingTestMatrix({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final cases = [
+      const _RoutingCase(
+          'QA / ID 201', '201', MpayRequestedApiVersion.v2, 'V2'),
+      const _RoutingCase(
+          'QA / ID 201', '201', MpayRequestedApiVersion.v1, 'V1'),
+      const _RoutingCase('myAIS / ID 1', '1', MpayRequestedApiVersion.v2, 'V1'),
+      const _RoutingCase(
+          'Other merchant', '999', MpayRequestedApiVersion.v2, 'V1'),
+    ];
+
+    return _SectionCard(
+      title: 'Routing test matrix',
+      icon: Icons.fact_check_outlined,
+      trailing: _FlowBadge(
+        label: controller.sdkAvailable ? 'SDK CONNECTED' : 'SAFE DEFAULT',
+        color: controller.sdkAvailable
+            ? AISColors.successGreen
+            : AISColors.warningOrange,
+      ),
+      child: Column(
+        children: [
+          const _MatrixHeader(),
+          for (final testCase in cases)
+            _MatrixRow(
+              testCase: testCase,
+              actual: evaluateMpayRoute(
+                merchantKey: testCase.merchantKey,
+                requestedVersion: testCase.version,
+                apiV2Flag: controller.apiV2,
+                sdkAvailable: controller.sdkAvailable,
+              ),
+            ),
+          const Divider(height: 18),
+          _MatrixRow(
+            testCase: const _RoutingCase(
+              'Targeting OFF / SDK unavailable',
+              'any',
+              MpayRequestedApiVersion.v2,
+              'V1',
+            ),
+            actual: evaluateMpayRoute(
+              merchantKey: '201',
+              requestedVersion: MpayRequestedApiVersion.v2,
+              apiV2Flag: false,
+              sdkAvailable: false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoutingCase {
+  final String name;
+  final String merchantKey;
+  final MpayRequestedApiVersion version;
+  final String expected;
+
+  const _RoutingCase(this.name, this.merchantKey, this.version, this.expected);
+}
+
+class _MatrixHeader extends StatelessWidget {
+  const _MatrixHeader();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.only(bottom: 6),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Text('SCENARIO', style: _matrixHeaderStyle),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text('REQUEST', style: _matrixHeaderStyle),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text('EXPECTED', style: _matrixHeaderStyle),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text('LIVE', style: _matrixHeaderStyle),
+            ),
+          ],
+        ),
+      );
+
+  static const _matrixHeaderStyle = TextStyle(
+    color: AISColors.textMedium,
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+  );
+}
+
+class _MatrixRow extends StatelessWidget {
+  final _RoutingCase testCase;
+  final MpayRouteDecision actual;
+
+  const _MatrixRow({required this.testCase, required this.actual});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(
+          children: [
+            Expanded(flex: 3, child: Text(testCase.name)),
+            Expanded(
+              flex: 2,
+              child:
+                  Text('${testCase.merchantKey} / ${testCase.version.label}'),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                'API ${testCase.expected}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                'API ${actual.isV2 ? 'V2' : 'V1'}',
+                style: TextStyle(
+                  color:
+                      actual.isV2 ? AISColors.ldBlue : AISColors.successGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _CodeBlock extends StatelessWidget {
+  final String text;
+
+  const _CodeBlock({required this.text});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF101F35),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SelectableText(
+          text,
+          style: const TextStyle(
+            color: Color(0xFFB8FFD0),
+            fontFamily: 'monospace',
+            fontSize: 12,
+            height: 1.5,
+          ),
+        ),
+      );
 }
 
 class _FlagSummary extends StatelessWidget {

@@ -39,19 +39,39 @@ The demo uses synthetic, stable contexts only:
 | Demo identity | Key | `userType` | `merchantId` | Country |
 | --- | --- | --- | --- | --- |
 | Internal Tester | `employee-001` | `internal` | `MPAY-INTERNAL` | `TH` |
-| Beta Merchant | `merchant-001` | `merchant` | `MERCHANT-BETA` | `TH` |
+| Beta Merchant | `merchant-001` | `merchant` | `201` | `TH` |
 | Normal Customer A | `customer-001` | `customer` | `MERCHANT-001` | `TH` |
 | Normal Customer B | `customer-002` | `customer` | `MERCHANT-002` | `TH` |
 
 The app version is sent as `appVersion` and defaults to the current app
 version (`1.0.0+1`); override it at build time with `--dart-define=APP_VERSION=...`.
 
+## API routing playground
+
+The mPAY page also includes an API Routing Playground based on the presentation's
+production rule:
+
+```text
+merchant key == "201" AND requested apiVersion == "v2" -> API V2
+otherwise -> API V1
+```
+
+It shows the live LaunchDarkly evaluation, the selected route, the request
+contract (`Authorization`, `X-Requested-Api-Version`, `Idempotency-Key`, and
+`X-Request-Id`), and a compact routing test matrix. If the SDK is unavailable,
+the route is forced to API V1 as a safe default.
+
+The request preview intentionally uses synthetic values. It does not call a
+real payment gateway and never exposes a real credential. For the presentation,
+start with merchant key `201` and requested version `v2`, then try `1` or `v1`
+to show the safe V1 route.
+
 ## Suggested targeting rules
 
 Configure all three flags with the same targeting rules in this order:
 
 1. `userType` is `internal` → `true` (internal targeting).
-2. `merchantId` is `MERCHANT-BETA` → `true` (merchant targeting).
+2. `merchantId` is `201` → `true` (merchant targeting).
 3. Percentage rollout → choose the desired percentage of remaining contexts,
    for example 10% or 25% → `true`.
 4. Fallthrough → `false` for all three flags.

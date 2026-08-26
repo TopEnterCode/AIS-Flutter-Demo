@@ -47,7 +47,8 @@ class MpayDemoContext {
       name: 'Beta Merchant',
       key: 'merchant-001',
       userType: 'merchant',
-      merchantId: 'MERCHANT-BETA',
+      // The merchant business key used by the production routing rule.
+      merchantId: '201',
     ),
     MpayDemoContext(
       name: 'Normal Customer A',
